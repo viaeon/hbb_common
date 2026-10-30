@@ -205,10 +205,49 @@ const CHARS: &[char] = &[
 pub const RENDEZVOUS_SERVERS: &[&str] = &["rs-ny.rustdesk.com"];
 pub const RS_PUB_KEY: &str = "OeVuKk5nlHiXp+APNn0Y3pC1Iwpwn44JGqrQCsWqmBw=";
 
-pub const RENDEZVOUS_PORT: i32 = 21116;
-pub const RELAY_PORT: i32 = 21117;
-pub const WS_RENDEZVOUS_PORT: i32 = 21118;
-pub const WS_RELAY_PORT: i32 = 21119;
+// 兜底端口：编译时可通过环境变量覆盖（RENDEZVOUS_PORT / RELAY_PORT /
+// WS_RENDEZVOUS_PORT / WS_RELAY_PORT）。注意它们只是"地址里没写端口时"的默认值，
+// 客户端若填了 host:port，一切都以填的端口为准（ws 等偏移端口也跟着算）。
+const fn const_parse_port(s: &str) -> i32 {
+    let bytes = s.as_bytes();
+    if bytes.is_empty() {
+        return -1;
+    }
+    let mut value: i32 = 0;
+    let mut i = 0;
+    while i < bytes.len() {
+        let c = bytes[i];
+        if c < b'0' || c > b'9' {
+            return -1;
+        }
+        value = value * 10 + (c - b'0') as i32;
+        i += 1;
+    }
+    if value > 0 && value < 65536 {
+        value
+    } else {
+        -1
+    }
+}
+
+const fn port_from_env(value: Option<&str>, default: i32) -> i32 {
+    match value {
+        Some(v) => {
+            let p = const_parse_port(v);
+            if p > 0 {
+                p
+            } else {
+                default
+            }
+        }
+        None => default,
+    }
+}
+
+pub const RENDEZVOUS_PORT: i32 = port_from_env(option_env!("RENDEZVOUS_PORT"), 21116);
+pub const RELAY_PORT: i32 = port_from_env(option_env!("RELAY_PORT"), 21117);
+pub const WS_RENDEZVOUS_PORT: i32 = port_from_env(option_env!("WS_RENDEZVOUS_PORT"), 21118);
+pub const WS_RELAY_PORT: i32 = port_from_env(option_env!("WS_RELAY_PORT"), 21119);
 
 macro_rules! serde_field_string {
     ($default_func:ident, $de_func:ident, $default_expr:expr) => {
