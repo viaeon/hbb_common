@@ -65,7 +65,7 @@ lazy_static::lazy_static! {
     );    
     //应用名称，读取Repository secrets值
     pub static ref APP_NAME: RwLock<String> = RwLock::new(
-        option_env!("APP_NAME").unwrap_or("RustDesk").into()
+        option_env!("APP_NAME").unwrap_or("remote").into()
     );
     static ref KEY_PAIR: Mutex<Option<KeyPair>> = Default::default();
     static ref USER_DEFAULT_CONFIG: RwLock<(UserDefaultConfig, Instant)> = RwLock::new((UserDefaultConfig::load(), Instant::now()));
